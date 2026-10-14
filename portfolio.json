@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "lumen-console-ryan-vo",
+  "owner": "A220man",
+  "email": "ryandtvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "workflows": [
+    "Install agent skills from GitHub repositories with sparse checkout",
+    "Search and discover skills by name, owner, and tags",
+    "Restore reproducible skill sets from lock file (skills install/ci)"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "summary": "Work in progress: lumen-console-ryan-vo",
+  "status": "work-in-progress"
+}
