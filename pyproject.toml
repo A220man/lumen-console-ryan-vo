@@ -65,8 +65,9 @@ include = ["lumen*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-pythonpath = ["."]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = "-p no:pytest-asyncio"
 
 [tool.ruff]
 line-length = 100

@@ -8,7 +8,15 @@ from app.main import app
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
+def event_loop():
+    import asyncio
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="session")
 async def engine():
     engine = create_async_engine(
         TEST_DATABASE_URL,
@@ -37,6 +45,14 @@ def client(db_session):
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
+    # Override settings for demo mode to avoid DB connection in lifespan
+    from app.core.config import get_settings
+    settings = get_settings()
+    original_demo_mode = settings.demo_mode
+    settings.demo_mode = True
+    try:
+        with TestClient(app) as c:
+            yield c
+    finally:
+        settings.demo_mode = original_demo_mode
     app.dependency_overrides.clear()

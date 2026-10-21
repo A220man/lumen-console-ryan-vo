@@ -53,5 +53,20 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db() -> None:
-    async with get_engine().begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    from app.core.config import get_settings
+    settings = get_settings()
+    if settings.demo_mode:
+        # Use in-memory SQLite for demo mode
+        from sqlalchemy.ext.asyncio import create_async_engine
+        from sqlalchemy.pool import StaticPool
+        demo_engine = create_async_engine(
+            "sqlite+aiosqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+        async with demo_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await demo_engine.dispose()
+    else:
+        async with get_engine().begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
