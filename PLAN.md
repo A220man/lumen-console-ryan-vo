@@ -24,7 +24,7 @@ Tests: `backend/tests/test_health.py`, `backend/tests/test_auth.py`, `backend/te
 
 ### skill-install — Skill installation from GitHub repositories
 
-Status: in_progress
+Status: done
 
 Acceptance:
 - CLI command to install skill from GitHub URL
