@@ -67,8 +67,9 @@ include = ["lumen*"]
 asyncio_mode = "auto"
 testpaths = ["backend/tests"]
 pythonpath = ["backend"]
-addopts = "-p no:pytest-asyncio"
+addopts = ""
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
