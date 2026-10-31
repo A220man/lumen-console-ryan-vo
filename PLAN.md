@@ -38,14 +38,16 @@ Tests: `backend/tests/test_skills.py`
 
 ### skill-search — Skill search and discovery
 
-Status: planned
+Status: done
 
 Acceptance:
 - Search skills by name, owner, keywords
 - List installed skills
 - API endpoints for search and listing
 
-Implementation: `backend/app/api/skills.py`
+Implementation: `backend/app/api/skills.py`, `frontend/src/pages/SkillsPage.tsx`, `frontend/src/api/client.ts`, `frontend/src/types/index.ts`
+
+Tests: `backend/tests/test_skills.py`
 
 ### skill-lock — Lock file and reproducible install (skills install/ci)
 
