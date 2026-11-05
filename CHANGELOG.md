@@ -1,8 +1,18 @@
 # Changelog
 
-## 1.3.0 — work-in-progress checkpoint
+## 1.4.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- **skill-lock feature**: Lock file export/import and CI mode for reproducible installs
+  - `lumen export` — Export lock file to skills-lock.json (default: project scope)
+  - `lumen import` — Import lock file from skills-lock.json and install skills
+  - `lumen ci` — Strict CI mode install (fails on hash mismatch, like npm ci)
+  - API endpoints: POST /api/v1/lock/export, POST /api/v1/lock/import, POST /api/v1/lock/ci
+  - Service methods: `export_lock_file`, `import_lock_file`, `ci_install`
 
 ## 1.2.0 — work-in-progress checkpoint
 
@@ -42,3 +52,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial project scaffold with FastAPI backend and React+TypeScript frontend
 - Docker Compose with PostgreSQL, Keycloak, backend, frontend
 - Project skeleton passes preflight checks
+
