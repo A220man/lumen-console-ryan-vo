@@ -268,6 +268,120 @@ class SkillService:
             except Exception as e:
                 results.append({"name": skill_name, "status": "failed", "error": str(e)})
 
+
+    async def export_lock_file(self, user_id, scope: SkillScope, output_path: Path):
+        """Export lock file to a JSON file on disk."""
+        from app.models import LockFile
+        from sqlalchemy import select
+
+        lock_file = await self.db.execute(
+            select(LockFile).where(
+                LockFile.owner_id == user_id,
+                LockFile.scope == scope,
+            )
+        )
+        lock_file = lock_file.scalar_one_or_none()
+
+        if not lock_file:
+            raise ValueError("No lock file found for this scope")
+
+        lock_data = json.loads(lock_file.content)
+        output_path.write_text(json.dumps(lock_data, indent=2))
+
+    async def import_lock_file(self, user_id, scope: SkillScope, input_path: Path, force: bool = False):
+        """Import lock file from a JSON file on disk and install skills."""
+        if not input_path.exists():
+            raise ValueError(f"Lock file not found: {input_path}")
+
+        lock_data = json.loads(input_path.read_text())
+
+        # Store in database
+        from app.models import LockFile
+        from sqlalchemy import select
+
+        lock_file = await self.db.execute(
+            select(LockFile).where(
+                LockFile.owner_id == user_id,
+                LockFile.scope == scope,
+            )
+        )
+        lock_file = lock_file.scalar_one_or_none()
+
+        if lock_file:
+            lock_file.content = json.dumps(lock_data, indent=2)
+            lock_file.version = str(lock_data.get("version", 3))
+        else:
+            lock_file = LockFile(
+                owner_id=user_id,
+                scope=scope,
+                content=json.dumps(lock_data, indent=2),
+                version=str(lock_data.get("version", 3)),
+            )
+            self.db.add(lock_file)
+
+        await self.db.commit()
+
+        # Now install from the imported lock file
+        return await self.install_from_lock(user_id, scope, force=force)
+
+    async def ci_install(self, user_id, scope: SkillScope, lock_file_path: Optional[Path] = None):
+        """Strict CI mode install - fails if lock file doesn't match or skills can't be installed."""
+        from app.models import LockFile, Skill
+        from sqlalchemy import select
+
+        if lock_file_path and lock_file_path.exists():
+            # Use provided lock file
+            lock_data = json.loads(lock_file_path.read_text())
+        else:
+            # Use database lock file
+            lock_file = await self.db.execute(
+                select(LockFile).where(
+                    LockFile.owner_id == user_id,
+                    LockFile.scope == scope,
+                )
+            )
+            lock_file = lock_file.scalar_one_or_none()
+
+            if not lock_file:
+                raise ValueError("No lock file found for this scope")
+            lock_data = json.loads(lock_file.content)
+
+        results = []
+        for skill_name, skill_data in lock_data.get("skills", {}).items():
+            try:
+                # Check if skill already exists with matching hash
+                existing = await self.db.execute(
+                    select(Skill).where(
+                        Skill.owner_id == user_id,
+                        Skill.name == skill_name,
+                        Skill.scope == scope,
+                    )
+                )
+                existing_skill = existing.scalar_one_or_none()
+
+                if existing_skill:
+                    expected_hash = skill_data.get("skillFolderHash")
+                    if existing_skill.skill_folder_hash == expected_hash:
+                        results.append({"name": skill_name, "status": "unchanged"})
+                        continue
+                    else:
+                        raise ValueError(f"Skill '{skill_name}' hash mismatch: expected {expected_hash}, got {existing_skill.skill_folder_hash}")
+
+                # Install new skill
+                skill, _ = await self.install_skill(
+                    user_id=user_id,
+                    source_url=skill_data["sourceUrl"],
+                    skill_name=skill_name,
+                    skill_path=skill_data.get("skillPath"),
+                    scope=scope,
+                    force=False,  # Never force in CI mode
+                )
+                results.append({"name": skill_name, "status": "installed"})
+            except Exception as e:
+                results.append({"name": skill_name, "status": "failed", "error": str(e)})
+                # In CI mode, we should fail fast
+                raise ValueError(f"CI install failed for '{skill_name}': {e}")
+
         return results
 
     async def check_updates(self, user_id, scope: SkillScope):

@@ -220,6 +220,106 @@ def install(
 
 
 @app.command()
+def export(
+    global_scope: bool = typer.Option(False, "--global", "-g", help="Export global scope lock file"),
+    output: str = typer.Option("skills-lock.json", "--output", "-o", help="Output file path"),
+):
+    """Export lock file to JSON file (skills-lock.json)."""
+    config = load_config()
+    access_token = config.get("access_token")
+    if not access_token:
+        console.print("[red]Not authenticated. Run 'lumen login' first.[/red]")
+        raise typer.Exit(1)
+
+    scope = "global" if global_scope else "project"
+    with get_client(access_token) as client:
+        try:
+            resp = client.post("/lock/export", json={"scope": scope, "path": output})
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPStatusError as e:
+            console.print(f"[red]Export failed: {e.response.json().get('detail', str(e))}[/red]")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"[red]Export failed: {e}[/red]")
+            raise typer.Exit(1)
+
+    console.print(f"[green]Lock file exported to {data['path']}[/green]")
+
+
+@app.command()
+def import_lock(
+    path: str = typer.Argument(..., help="Path to lock file to import"),
+    global_scope: bool = typer.Option(False, "--global", "-g", help="Import to global scope"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force reinstall existing skills"),
+):
+    """Import lock file from JSON and install skills."""
+    config = load_config()
+    access_token = config.get("access_token")
+    if not access_token:
+        console.print("[red]Not authenticated. Run 'lumen login' first.[/red]")
+        raise typer.Exit(1)
+
+    scope = "global" if global_scope else "project"
+    with get_client(access_token) as client:
+        try:
+            resp = client.post("/lock/import", json={"scope": scope, "path": path, "force": force})
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPStatusError as e:
+            console.print(f"[red]Import failed: {e.response.json().get('detail', str(e))}[/red]")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"[red]Import failed: {e}[/red]")
+            raise typer.Exit(1)
+
+    console.print(f"[green]{data['message']}[/green]")
+    for r in data["results"]:
+        if r["status"] == "installed":
+            console.print(f"  [green]✓[/green] {r['name']}: {r['status']}")
+        elif r["status"] == "failed":
+            console.print(f"  [red]✗[/red] {r['name']}: {r['status']} - {r.get('error', 'Unknown error')}")
+
+
+@app.command()
+def ci(
+    global_scope: bool = typer.Option(False, "--global", "-g", help="Use global scope lock file"),
+    lock_file: str = typer.Option(None, "--lock-file", "-l", help="Path to lock file (default: skills-lock.json in cwd)"),
+):
+    """Strict CI mode install - fails on hash mismatch or missing skills (npm ci equivalent)."""
+    config = load_config()
+    access_token = config.get("access_token")
+    if not access_token:
+        console.print("[red]Not authenticated. Run 'lumen login' first.[/red]")
+        raise typer.Exit(1)
+
+    scope = "global" if global_scope else "project"
+    with get_client(access_token) as client:
+        try:
+            payload = {"scope": scope}
+            if lock_file:
+                payload["path"] = lock_file
+            resp = client.post("/lock/ci", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPStatusError as e:
+            console.print(f"[red]CI install failed: {e.response.json().get('detail', str(e))}[/red]")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"[red]CI install failed: {e}[/red]")
+            raise typer.Exit(1)
+
+    console.print(f"[green]CI install completed[/green]")
+    for r in data["results"]:
+        if r["status"] == "installed":
+            console.print(f"  [green]✓[/green] {r['name']}: {r['status']}")
+        elif r["status"] == "unchanged":
+            console.print(f"  [blue]○[/blue] {r['name']}: {r['status']}")
+        elif r["status"] == "failed":
+            console.print(f"  [red]✗[/red] {r['name']}: {r['status']} - {r.get('error', 'Unknown error')}")
+
+
+@app.command()
 def update(
     global_scope: bool = typer.Option(False, "--global", "-g", help="Update global skills"),
     force: bool = typer.Option(False, "--force", "-f", help="Force update"),
