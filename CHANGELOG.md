@@ -1,8 +1,18 @@
 # Changelog
 
-## 1.4.0 — work-in-progress checkpoint
+## 1.5.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.4.0 — work-in-progress checkpoint
+
+### Fixed
+- **check-update endpoint**: Fixed `/api/v1/skills/{skill_id}/check-update` to actually check for skill updates by performing a sparse clone and comparing folder hashes (was hardcoded to return `update_available: false`)
+
+### Verified
+- All backend tests pass (11/11)
+- All frontend tests pass (4/4)
+- Frontend build succeeds with TypeScript type checking
 
 ## 1.3.0 — work-in-progress checkpoint
 
@@ -52,4 +62,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial project scaffold with FastAPI backend and React+TypeScript frontend
 - Docker Compose with PostgreSQL, Keycloak, backend, frontend
 - Project skeleton passes preflight checks
-

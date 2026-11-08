@@ -182,13 +182,28 @@ async def check_skill_update(
     skill_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     service: SkillService = Depends(get_skill_service),
+    db: AsyncSession = Depends(get_db),
 ):
     from app.models import Skill
     from sqlalchemy import select
+    import tempfile
+    from pathlib import Path
 
     result = await db.execute(select(Skill).where(Skill.id == skill_id, Skill.owner_id == user_id))
     skill = result.scalar_one_or_none()
     if not skill:
         raise HTTPException(status_code=404, detail="Skill not found")
+
+    # Check for updates by doing a sparse clone and comparing hashes
+    with tempfile.TemporaryDirectory() as tmpdir:
+        target_dir = Path(tmpdir)
+        try:
+            skill_dir, new_hash = await service.github.sparse_clone_skill(
+                skill.source_url, skill.skill_path, target_dir
+            )
+            if new_hash != skill.skill_folder_hash:
+                return {"skill_id": str(skill_id), "update_available": True, "current_hash": skill.skill_folder_hash, "new_hash": new_hash}
+        except Exception:
+            pass
 
     return {"skill_id": str(skill_id), "update_available": False}
