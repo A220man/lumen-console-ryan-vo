@@ -267,6 +267,7 @@ class SkillService:
                 results.append({"name": skill_name, "status": "installed"})
             except Exception as e:
                 results.append({"name": skill_name, "status": "failed", "error": str(e)})
+        return results
 
 
     async def export_lock_file(self, user_id, scope: SkillScope, output_path: Path):
