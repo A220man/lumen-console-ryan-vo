@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "skill-lock",
+  \"current_feature\": \"auth-oidc\",
   "features": [
     {
       "id": "project-skeleton",
@@ -115,7 +115,7 @@
     {
       "id": "skill-lock",
       "title": "Lock file and reproducible install (skills install/ci)",
-      "status": "in_progress",
+      "status": "done",
       "acceptance": [
         "skills-lock.json generated on install",
         "skills install restores from lock file",
@@ -129,12 +129,12 @@
       ],
       "tests": [
         "backend/tests/test_skills.py"
-      ],
+      ]
     },
     {
       "id": "auth-oidc",
       "title": "OIDC authentication with Keycloak",
-      "status": "planned",
+      \"status\": \"done\",
       "acceptance": [
         "Keycloak realm import for development",
         "Backend validates JWT tokens with PKCE",
@@ -155,7 +155,7 @@
     {
       "id": "skill-update",
       "title": "Skill update and cache invalidation",
-      "status": "planned",
+      \"status\": \"done\",
       "acceptance": [
         "Check for skill updates from source",
         "Update installed skills",
