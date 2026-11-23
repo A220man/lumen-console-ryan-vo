@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lumen-console"
-version = "1.7.0"
+version = "1.8.0"
 description = "Open agent skills management tool"
 readme = "README.md"
 license = {text = "MIT"}
