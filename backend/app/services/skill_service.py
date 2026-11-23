@@ -8,6 +8,7 @@ from typing import Optional
 from git import Repo
 from git.exc import GitCommandError
 from datetime import datetime
+import httpx
 
 from app.core.config import get_settings
 from app.schemas import SkillScope
@@ -96,6 +97,33 @@ class GitHubService:
         return "main"
 
     async def get_latest_commit_hash(self, repo_url: str, branch: str = "main") -> str:
+        """Get the latest commit hash from the repository's default branch.
+
+        Uses the GitHub API to fetch the most recent commit SHA.
+        Falls back to returning empty string on failure (e.g., no token, rate limited, network error).
+        """
+        token = self.token or settings.github_token
+        headers = {}
+        if token and "github.com" in repo_url:
+            headers["Authorization"] = f"token {token}"
+
+        try:
+            # Determine owner/repo from URL
+            # Handle both https://github.com/owner/repo and git@github.com:owner/repo
+            match = re.search(r"(?:github\.com[:/)([^/]+)/([^/]+?)(?:\.git)?$)", repo_url)
+            if not match:
+                return ""
+            owner, repo = match.groups()
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/commits?sha={branch}&per_page=1"
+
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(api_url, headers=headers, timeout=15.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if isinstance(data, list) and len(data) > 0:
+                        return data[0].get("sha", "")
+        except Exception:
+            pass
         return ""
 
 
