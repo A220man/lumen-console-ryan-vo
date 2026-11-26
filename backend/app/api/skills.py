@@ -203,7 +203,9 @@ async def check_skill_update(
             )
             if new_hash != skill.skill_folder_hash:
                 return {"skill_id": str(skill_id), "update_available": True, "current_hash": skill.skill_folder_hash, "new_hash": new_hash}
-        except Exception:
-            pass
+            else:
+                return {"skill_id": str(skill_id), "update_available": False, "current_hash": skill.skill_folder_hash, "new_hash": new_hash}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to check for updates: {e}")
 
     return {"skill_id": str(skill_id), "update_available": False}
